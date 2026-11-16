@@ -1,0 +1,8 @@
+# Docker persistent volumes (contain secrets, keys & multi-GB models)
+n8n_data/
+ollama_data/
+postgres_data/
+
+# Environment & OS files
+.env
+.DS_Store

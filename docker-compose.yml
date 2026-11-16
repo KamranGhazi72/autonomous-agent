@@ -1,0 +1,78 @@
+
+
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: agent_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: change_me_in_production
+      POSTGRES_DB: agent_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d agent_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: agent_n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=agent_db
+      - DB_POSTGRESDB_USER=postgres
+      - DB_POSTGRESDB_PASSWORD=change_me_in_production
+      - DB_POSTGRESDB_SCHEMA=public
+
+
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=change_me_in_production
+
+
+      - GENERIC_TIMEZONE=Europe/Helsinki
+      - N8N_DEFAULT_TIMEZONE=Europe/Helsinki
+      - WEBHOOK_URL=https://your-domain-or-ngrok.example.com
+      
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+    volumes:
+      - ./n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: agent_ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama_data:/root/.ollama
+
+  whisper-local:
+    image: onerahmet/openai-whisper-asr-webservice:latest
+    container_name: agent_whisper
+    restart: unless-stopped
+    environment:
+      - ASR_MODEL=tiny 
+      - ASR_ENGINE=openai_whisper
+    ports:
+      - "9000:9000"
+
+networks:
+  default:
+    name: agent_network

@@ -1,0 +1,1263 @@
+{
+  "name": "CustomerServiceAutomatation",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -400,
+        -32
+      ],
+      "id": "5b855ced-8235-45e9-a714-23d4e87a8418",
+      "name": "Telegram Trigger",
+      "webhookId": "172bb419-8e6c-4a68-8014-53ea525f4c82",
+      "credentials": {
+        "telegramApi": {
+          "id": "z7bwzqR8VHQBReNS",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "bb2307db-946b-4f5d-892c-fe91a0adfef8",
+                    "leftValue": "={{ $json.message.voice !== undefined || $json.message.audio !== undefined }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Voice Branch"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "64783ef5-f94f-4718-b91f-78a8d5ed214a",
+                    "leftValue": "={{ $json.message.text !== undefined }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text Branch"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.5,
+      "position": [
+        -176,
+        160
+      ],
+      "id": "85c15840-9cbb-4c71-937d-82c67d18cf5a",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice ? $json.message.voice.file_id : $json.message.audio.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        -176
+      ],
+      "id": "7aab3f81-7c9a-494d-89e6-9b9f0649db38",
+      "name": "Get a file",
+      "webhookId": "c108da60-6c81-4873-a3b0-cbe369eba610",
+      "credentials": {
+        "telegramApi": {
+          "id": "z7bwzqR8VHQBReNS",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.telegram.org/file/bot9118267128:AAHdtf8CZyO-JZNo3qc9IwbOhji_hOL7_qs/{{ $json.result.file_path }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        160,
+        -272
+      ],
+      "id": "9ba8b23c-b607-45a6-9eea-5fd63c6792a6",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3.8-flash",
+          "mode": "list",
+          "cachedResultName": "Gemini 3.8 Flash"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        576,
+        -160
+      ],
+      "id": "346d80ca-d6b6-4e7f-adbd-95f4a2f7a971",
+      "name": "Gemini Transcribe",
+      "retryOnFail": false,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "H2Ww8NJ8Bz4ekuE5",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://whisper-local:9000/asr",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "audio_file",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        896,
+        -256
+      ],
+      "id": "cc89c297-3476-4847-9a15-c05b793d9b59",
+      "name": "Local Whisper Fallback"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $('oga to ogg Converter').all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        736,
+        -320
+      ],
+      "id": "4cdf5239-b67e-49a7-a4d7-ae0069da93af",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nfor (const item of $input.all()) {\n  if (item.binary && item.binary.data) {\n    item.binary.data.mimeType = 'audio/ogg';\n    item.binary.data.fileExtension = 'ogg';\n  }\n}\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        -272
+      ],
+      "id": "b60d9cb2-3108-4730-b8dc-df295345e07b",
+      "name": "oga to ogg Converter"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        -208
+      ],
+      "id": "ee8170f7-e350-4f96-8cce-969ac1dab327",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "chatId": "8859266381",
+        "text": "=🚨 *خطای سیستمی در پروژه* 🚨  \n• *نود خطاکار:* {{ $json.execution.lastNodeExecuted }} \n• *شرح خطا:* {{ $json.execution.error.message }} \n• *شناسه اجرا:* {{ $json.execution.id }} \n• *لینک دیباگ:* {{ $json.execution.url }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -288,
+        -208
+      ],
+      "id": "66e7dbe5-e5c4-42e7-9927-3d7b07f7585a",
+      "name": "Send a text message",
+      "webhookId": "52055dec-e5ca-4f26-9bda-2a91ac664a20",
+      "credentials": {
+        "telegramApi": {
+          "id": "z7bwzqR8VHQBReNS",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-3-flash-preview",
+          "mode": "id"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an intent classification engine for an enterprise platform. \nAnalyze the user's incoming message and determine their primary intent.\n\nUser Message: \"{{ $json.user_message }}\"\n\nClassify the intent into EXACTLY one of these two categories:\n1. \"technical_support\": Questions about system issues, bugs, API documentation, technical how-to guides, or troubleshooting.\n2. \"sales_lead\": Inquiries about pricing, business proposals, budget, project timeline, buying services, or custom feature requests.\n\nReturn ONLY a raw JSON object. Do not include markdown formatting, code blocks (like ```json), or any conversational text. Use this exact schema:\n{\n  \"intent\": \"technical_support\" OR \"sales_lead\",\n  \"confidence_score\": (number between 0.0 and 1.0),\n  \"summary\": \"(Brief 1-sentence English summary of the request)\"\n}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1328,
+        80
+      ],
+      "id": "2ff1041f-3def-4472-84f3-ad57d295bdd3",
+      "name": "Intent Classifier",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "H2Ww8NJ8Bz4ekuE5",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const responseJson = $input.first().json;\n\n// 1. استخراج دقیق متن از مسیر مخفی در ساختار جدید نود LangChain Gemini\nlet rawText = \"\";\nif (responseJson.content && responseJson.content.parts && responseJson.content.parts.length > 0) {\n  rawText = responseJson.content.parts[0].text;\n} else if (responseJson.text) {\n  rawText = responseJson.text; \n} else {\n  rawText = JSON.stringify(responseJson);\n}\n\n// 2. پاک‌سازی کاراکترهای اضافه و استخراج فقط بلوک JSON\nlet cleanedText = \"\";\nconst jsonMatch = rawText.match(/\\{[\\s\\S]*\\}/);\n\nif (jsonMatch) {\n  cleanedText = jsonMatch[0];\n} else {\n  cleanedText = rawText;\n}\n\nlet intentData = {};\nlet debugStatus = \"Success\";\n\n// 3. تبدیل ایمن به Object\ntry {\n  intentData = JSON.parse(cleanedText);\n} catch (error) {\n  debugStatus = \"Parse Error\";\n  intentData = {\n    intent: \"technical_support\", \n    confidence_score: 0.1,\n    summary: \"Defaulted due to parse error\"\n  };\n}\n\n// 4. دریافت اطلاعات کاربر (توجه: نام 'Edit Fields / Normalize' باید دقیقاً نام نود فاز ۲ شما باشد)\nconst previousNodeData = $('Edit Fields Normalize').first().json || {};\n\n// 5. ارسال دیتای ساختاریافته برای نود Switch\nreturn [{\n  json: {\n    user_message: previousNodeData.user_message || \"No message\",\n    chat_id: previousNodeData.chat_id || \"\",\n    intent: intentData.intent || \"technical_support\",\n    confidence_score: intentData.confidence_score || 0,\n    summary: intentData.summary || \"\",\n    _debug_status: debugStatus\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1888,
+        80
+      ],
+      "id": "fd60b7e4-fad3-4bc4-8c05-26456d783f17",
+      "name": "Parse Intent JSON"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9d07b260-dd72-48d3-82a8-67241c608f8a",
+              "name": "user_message",
+              "value": "={{ \n  $json.message && $json.message.text \n    ? $json.message.text \n    : ($json.text \n        ? $json.text \n        : ($('Gemini Transcribe').item.json.candidates \n            ? $('Gemini Transcribe').item.json.candidates[0].content.parts[0].text \n            : $('Local Whisper Fallback').item.json.data\n          )\n      ) \n}}",
+              "type": "string"
+            },
+            {
+              "id": "792354ba-3cb9-46f7-b447-91a81134f280",
+              "name": "chat_id",
+              "value": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+              "type": "string"
+            },
+            {
+              "id": "b3b5f516-c2cd-454f-94c7-089a10756947",
+              "name": "sender_name",
+              "value": "={{ $('Telegram Trigger').item.json.message.from.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "fbe51df9-3950-4198-b9ea-5b45d5e3c512",
+              "name": "message_type",
+              "value": "={{ $('Telegram Trigger').item.json.message.voice ? 'voice' : 'text' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1168,
+        80
+      ],
+      "id": "d296d5f4-5b08-4ad5-ae4d-8476c35cd1b2",
+      "name": "Edit Fields Normalize"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Parse Intent JSON').item.json.intent }}",
+                    "rightValue": "technical_support",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "06ae9555-0cec-4fa1-a00e-fc74e34a0d97"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Support Stream"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "61beaa62-efb6-4302-b50d-97debe66f403",
+                    "leftValue": "={{ $('Parse Intent JSON').item.json.intent }}",
+                    "rightValue": "sales_lead",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Sales Stream"
+            }
+          ]
+        },
+        "options": {
+          "allMatchingOutputs": false
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.5,
+      "position": [
+        2208,
+        80
+      ],
+      "id": "c7fb5df0-41c9-4c4b-8397-e8cf1362afcd",
+      "name": "Intent Router"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "needsFallback": true,
+        "options": {
+          "maxIterations": 3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2656,
+        -272
+      ],
+      "id": "abdda2a6-f604-4d09-b47c-a00ee1d3e298",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "afc2a876-06b2-4ece-a111-4f3442a87ecc",
+              "name": "chatInput",
+              "value": "={{ $('Parse Intent JSON').item.json.user_message }}",
+              "type": "string"
+            },
+            {
+              "id": "e30909e0-9269-44c1-996c-2a7691c1cc62",
+              "name": "sessionId",
+              "value": "={{ $('Parse Intent JSON').item.json.chat_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2512,
+        -272
+      ],
+      "id": "5a7b959a-12e0-42c5-8396-85bf32f6740f",
+      "name": "Prepare Agent Input"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        2592,
+        -48
+      ],
+      "id": "a80dd74f-ba87-48bf-ba56-1c187e65fc95",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "H2Ww8NJ8Bz4ekuE5",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        2736,
+        -48
+      ],
+      "id": "fa5bdd2f-c5fe-41e6-b9ad-96df30dcba4e",
+      "name": "Window Buffer Memory"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Use this tool to search the enterprise PostgreSQL database for technical documentation, system errors, API references, and troubleshooting guides.",
+        "tableName": "technical_documents",
+        "options": {
+          "columnNames": {
+            "values": {}
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.4,
+      "position": [
+        2848,
+        -48
+      ],
+      "id": "773ec5c9-9a31-48c2-a437-a85d9c53b2c8",
+      "name": "search_technical_docs",
+      "credentials": {
+        "postgres": {
+          "id": "SgXiRnttgbVfnVbA",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2944,
+        80
+      ],
+      "id": "88ee5522-ce0e-4a28-9d74-6b8fd374f52b",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "H2Ww8NJ8Bz4ekuE5",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Parse Intent JSON').item.json.chat_id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3024,
+        -272
+      ],
+      "id": "258d4bf6-e4b9-4767-8402-125ce8036da7",
+      "name": "Send a text message1",
+      "webhookId": "7aea13cf-11ab-4ac4-a57d-8f9abe56ea96",
+      "credentials": {
+        "telegramApi": {
+          "id": "z7bwzqR8VHQBReNS",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $json.chat_id }}"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2048,
+        80
+      ],
+      "id": "03adf61c-08b8-49c2-a172-d7b7ee695919",
+      "name": "Send a chat action",
+      "webhookId": "b20fec15-b0a3-443e-9d5d-f365eebd8a42",
+      "credentials": {
+        "telegramApi": {
+          "id": "z7bwzqR8VHQBReNS",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Edit Fields Normalize').item.json.user_message }}",
+        "messages": {
+          "messageValues": []
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1600,
+        192
+      ],
+      "id": "bc8687ec-bcdb-49d9-a136-480b318774a2",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:1b",
+        "options": {
+          "format": "json"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        1744,
+        384
+      ],
+      "id": "b3b64016-7a8a-4a5c-b40e-de18c890b5bc",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "vcRyfI3U3KQeesM2",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:1b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        2656,
+        80
+      ],
+      "id": "66daec40-60cd-4879-9a6b-c2927eec1582",
+      "name": "Ollama Chat Model1",
+      "credentials": {
+        "ollamaApi": {
+          "id": "vcRyfI3U3KQeesM2",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "needsFallback": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=Extract sales lead details from the user message below. Return ONLY valid JSON with keys: \"budget\" (string or \"Not specified\"), \"timeline\" (string or \"Not specified\"), \"project_scope\" (short summary), \"lead_score\" (integer 1-10 based on clarity and budget), and \"reply_message\" (a polite, professional response in the user's language acknowledging their inquiry and stating a specialist will contact them shortly).  User Message: {{ $('Parse Intent JSON').first().json.user_message }}"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2672,
+        400
+      ],
+      "id": "4815255f-2cdc-48e0-a7e7-37c935ed2a4c",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "afc2a876-06b2-4ece-a111-4f3442a87ecc",
+              "name": "chatInput",
+              "value": "={{ $('Parse Intent JSON').item.json.user_message }}",
+              "type": "string"
+            },
+            {
+              "id": "e30909e0-9269-44c1-996c-2a7691c1cc62",
+              "name": "sessionId",
+              "value": "={{ $('Parse Intent JSON').item.json.chat_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2512,
+        400
+      ],
+      "id": "044cf659-8775-46b9-9427-39e35199e179",
+      "name": "Prepare Agent Input1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        2592,
+        592
+      ],
+      "id": "0940fafc-ae18-48de-922f-b256ec632c2f",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "H2Ww8NJ8Bz4ekuE5",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:1b",
+        "options": {
+          "format": "json"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        2816,
+        592
+      ],
+      "id": "fd42437f-68d9-4226-911e-3fa51341c9ec",
+      "name": "Ollama Chat Model2",
+      "credentials": {
+        "ollamaApi": {
+          "id": "vcRyfI3U3KQeesM2",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const responseJson = $input.first().json;\nconst rawText = responseJson.text || responseJson.output || JSON.stringify(responseJson);\nconst jsonMatch = rawText.match(/\\{[\\s\\S]*\\}/);\n\nlet leadData = {};\ntry {\n  leadData = JSON.parse(jsonMatch ? jsonMatch[0] : rawText);\n} catch (e) {\n  leadData = {\n    budget: \"Not specified\",\n    timeline: \"Not specified\",\n    project_scope: \"General inquiry\",\n    lead_score: 5,\n    reply_message: \"سپاس از پیام شما. درخواست شما ثبت شد و کارشناسان فروش ما به زودی با شما تماس خواهند گرفت.\"\n  };\n}\n\nconst score = Number(leadData.lead_score) || 5;\nconst priority = score >= 8 ? \"Hot\" : score >= 5 ? \"Warm\" : \"Cold\";\nconst baseData = $('Parse Intent JSON').first().json;\n\nreturn [{\n  json: {\n    chat_id: baseData.chat_id,\n    raw_message: baseData.user_message,\n    budget: leadData.budget || \"Not specified\",\n    timeline: leadData.timeline || \"Not specified\",\n    project_scope: leadData.project_scope || \"\",\n    lead_score: score,\n    priority: priority,\n    reply_message: leadData.reply_message\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3008,
+        400
+      ],
+      "id": "963fa576-16b7-4004-a92a-bacbfe077b19",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "sales_leads",
+          "mode": "list",
+          "cachedResultName": "sales_leads"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chat_id": "={{ $json.chat_id }}",
+            "raw_message": "={{ $json.raw_message }}",
+            "timeline": "={{ $json.timeline }}",
+            "budget": "={{ $json.budget }}",
+            "project_scope": "={{ $json.project_scope }}",
+            "lead_score": "={{ $json.lead_score }}",
+            "priority": "={{ $json.priority }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "raw_message",
+              "displayName": "raw_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "budget",
+              "displayName": "budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "timeline",
+              "displayName": "timeline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "project_scope",
+              "displayName": "project_scope",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "lead_score",
+              "displayName": "lead_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "priority",
+              "displayName": "priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.8,
+      "position": [
+        3232,
+        400
+      ],
+      "id": "425dc9d6-0892-4f71-92c2-6630bde2f783",
+      "name": "Insert rows in a table",
+      "credentials": {
+        "postgres": {
+          "id": "SgXiRnttgbVfnVbA",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Parse Intent JSON').item.json.chat_id }}",
+        "text": "={{ $('Code in JavaScript').item.json.reply_message }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3440,
+        400
+      ],
+      "id": "dee66e02-9197-4e76-9993-145c054443e3",
+      "name": "Send a text message2",
+      "webhookId": "7aea13cf-11ab-4ac4-a57d-8f9abe56ea96",
+      "credentials": {
+        "telegramApi": {
+          "id": "z7bwzqR8VHQBReNS",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields Normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "oga to ogg Converter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Transcribe": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields Normalize",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Local Whisper Fallback": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields Normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Local Whisper Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "oga to ogg Converter": {
+      "main": [
+        [
+          {
+            "node": "Gemini Transcribe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Classifier": {
+      "main": [
+        [
+          {
+            "node": "Parse Intent JSON",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields Normalize": {
+      "main": [
+        [
+          {
+            "node": "Intent Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Intent JSON": {
+      "main": [
+        [
+          {
+            "node": "Send a chat action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Intent Router": {
+      "main": [
+        [
+          {
+            "node": "Prepare Agent Input",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Agent Input1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Agent Input": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "search_technical_docs": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "search_technical_docs",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a chat action": {
+      "main": [
+        [
+          {
+            "node": "Intent Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Parse Intent JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Prepare Agent Input1": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Insert rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert rows in a table": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "baade3af-e017-4f88-97bf-f5f74588f464",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6c3ead02c267f8da1321c4f37adc9ce15b878a970c12e9f8ee3d320a9dc55947"
+  },
+  "nodeGroups": [],
+  "id": "QCSyzTEj42R3pCi0",
+  "tags": []
+}

@@ -1,0 +1,175 @@
+{
+  "name": "RAG Knowledge Ingestion",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Knowledge Ingestion Upload",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Document",
+              "fieldType": "file",
+              "acceptFileTypes": ".pdf,.txt,.md",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Topic",
+              "placeholder": "ServiceName , Java , ...."
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -448,
+        -16
+      ],
+      "id": "29861faf-8698-4d9c-8b31-263e3c8d7a16",
+      "name": "On form submission",
+      "webhookId": "5256c899-24a9-48bc-a556-ed69ff72c21c"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": "technical_documents",
+        "options": {
+          "columnNames": {
+            "values": {}
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePGVector",
+      "typeVersion": 1.4,
+      "position": [
+        -224,
+        -16
+      ],
+      "id": "c29be9fd-6f71-46da-9ac9-6905361b3a57",
+      "name": "Postgres PGVector Store",
+      "credentials": {
+        "postgres": {
+          "id": "SgXiRnttgbVfnVbA",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        192
+      ],
+      "id": "08a7615a-e3e3-415a-baea-f4a222a907bc",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "H2Ww8NJ8Bz4ekuE5",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "textSplittingMode": "custom",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "Topic",
+                "value": "={{ $('On form submission').first().json.topic }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        -96,
+        192
+      ],
+      "id": "37b0d876-370d-4fc8-8583-9e3b0de964b1",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 200,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        0,
+        368
+      ],
+      "id": "a1aff1b8-6fe8-4fc8-9752-d5b3c2668371",
+      "name": "Recursive Character Text Splitter"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Postgres PGVector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "fa0e2079-2b84-48ac-b53e-7add15934b03",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6c3ead02c267f8da1321c4f37adc9ce15b878a970c12e9f8ee3d320a9dc55947"
+  },
+  "nodeGroups": [],
+  "id": "QZDP1EBAmuZ7hwuB",
+  "tags": []
+}
